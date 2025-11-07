@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma.js Graph (Standalone CDN Version)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 300px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #sidebar h2 {
+            margin-bottom: 20px;
+            color: #3498db;
+        }
+
+        #sidebar h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #ecf0f1;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:active {
+            background-color: #1c5985;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            background-color: #34495e;
+            color: white;
+        }
+
+        input[type="text"]::placeholder {
+            color: #95a5a6;
+        }
+
+        #stats {
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        #stats p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        #graph-container {
+            flex: 1;
+            background-color: white;
+            position: relative;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            z-index: 1000;
+        }
+
+        #info-panel h4 {
+            margin-top: 0;
+            color: #3498db;
+            font-size: 14px;
+        }
+
+        #info-panel p {
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #95a5a6;
+        }
+
+        .status {
+            background-color: #27ae60;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>🎯 Graph Controls</h2>
+
+        <div class="status">
+            ✓ CDN Version - No npm needed!
+        </div>
+
+        <div class="controls">
+            <h3>Layout Algorithms</h3>
+            <div class="button-group">
+                <button id="btn-circular">Circular Layout</button>
+                <button id="btn-random">Random Layout</button>
+                <button id="btn-refresh">Refresh View</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Graph Manipulation</h3>
+            <span class="label">Node ID:</span>
+            <input type="text" id="input-node-id" placeholder="e.g., new-node">
+            <div class="button-group">
+                <button id="btn-add-node">Add Node</button>
+                <button id="btn-remove-node">Remove Node</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Interactions</h3>
+            <div class="button-group">
+                <button id="btn-clear-highlights">Clear Highlights</button>
+                <button id="btn-zoom-in">Zoom In</button>
+                <button id="btn-zoom-out">Zoom Out</button>
+                <button id="btn-reset-view">Reset View</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Export</h3>
+            <div class="button-group">
+                <button id="btn-export">Export to JSON</button>
+                <button id="btn-console-log">Log Graph Data</button>
+            </div>
+        </div>
+
+        <div id="stats">
+            <h3>Graph Statistics</h3>
+            <p><strong>Nodes:</strong> <span id="stat-nodes">0</span></p>
+            <p><strong>Edges:</strong> <span id="stat-edges">0</span></p>
+            <p><strong>Density:</strong> <span id="stat-density">0</span></p>
+        </div>
+    </div>
+
+    <div id="graph-container"></div>
+
+    <div id="info-panel">
+        <h4>💡 How to Use</h4>
+        <p><strong>Click</strong> a node to highlight neighbors</p>
+        <p><strong>Drag</strong> nodes to move them</p>
+        <p><strong>Scroll</strong> to zoom in/out</p>
+        <p><strong>Right-click</strong> to pan the view</p>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "graphology": "https://cdn.skypack.dev/graphology@0.25.4",
+            "sigma": "https://cdn.skypack.dev/sigma@2.4.0",
+            "graphology-layout": "https://cdn.skypack.dev/graphology-layout@0.6.1"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import Graph from 'graphology';
+        import Sigma from 'sigma';
+        import { circular, random } from 'graphology-layout';
+
+        // Global variables
+        let graph;
+        let renderer;
+        let draggedNode = null;
+        let isDragging = false;
+
+        // Initialize graph
+        function initGraph() {
+            graph = new Graph();
+
+            // Create sample nodes
+            const categories = ["A", "B", "C", "D"];
+            const colors = {
+                A: "#ff6b6b",
+                B: "#4ecdc4",
+                C: "#45b7d1",
+                D: "#96ceb4",
+            };
+
+            // Add 20 nodes
+            for (let i = 0; i < 20; i++) {
+                const category = categories[Math.floor(Math.random() * categories.length)];
+                graph.addNode(`node-${i}`, {
+                    label: `Node ${i}`,
+                    size: Math.random() * 10 + 5,
+                    color: colors[category],
+                    category: category,
+                    x: Math.random(),
+                    y: Math.random(),
+                });
+            }
+
+            // Add random edges
+            for (let i = 0; i < 20; i++) {
+                const connections = Math.floor(Math.random() * 3) + 1;
+                for (let j = 0; j < connections; j++) {
+                    const target = Math.floor(Math.random() * 20);
+                    if (target !== i && !graph.hasEdge(`node-${i}`, `node-${target}`)) {
+                        graph.addEdge(`node-${i}`, `node-${target}`, {
+                            size: 2,
+                            color: "#cccccc",
+                        });
+                    }
+                }
+            }
+
+            // Apply circular layout
+            circular.assign(graph);
+
+            // Create renderer
+            const container = document.getElementById('graph-container');
+            renderer = new Sigma(graph, container, {
+                renderEdgeLabels: true,
+            });
+
+            setupEvents();
+            updateStats();
+
+            console.log('✓ Graph initialized with', graph.order, 'nodes and', graph.size, 'edges');
+        }
+
+        // Setup event handlers
+        function setupEvents() {
+            // Click node to highlight neighbors
+            renderer.on("clickNode", ({ node }) => {
+                clearHighlights();
+                const neighbors = graph.neighbors(node);
+
+                graph.setNodeAttribute(node, "highlighted", true);
+                const originalColor = graph.getNodeAttribute(node, "color");
+                graph.setNodeAttribute(node, "originalColor", originalColor);
+                graph.setNodeAttribute(node, "color", "#ff0000");
+
+                neighbors.forEach(neighbor => {
+                    graph.setNodeAttribute(neighbor, "highlighted", true);
+                    const color = graph.getNodeAttribute(neighbor, "color");
+                    graph.setNodeAttribute(neighbor, "originalColor", color);
+                    graph.setNodeAttribute(neighbor, "color", "#ffa500");
+                });
+
+                renderer.refresh();
+                console.log('Selected node:', node, 'with', neighbors.length, 'neighbors');
+            });
+
+            // Click stage to clear highlights
+            renderer.on("clickStage", () => {
+                clearHighlights();
+            });
+
+            // Hover effects
+            renderer.on("enterNode", () => {
+                document.body.style.cursor = "pointer";
+            });
+
+            renderer.on("leaveNode", () => {
+                document.body.style.cursor = "default";
+            });
+
+            // Drag and drop
+            renderer.on("downNode", (e) => {
+                isDragging = true;
+                draggedNode = e.node;
+            });
+
+            renderer.getMouseCaptor().on("mousemovebody", (e) => {
+                if (!isDragging || !draggedNode) return;
+                const pos = renderer.viewportToGraph(e);
+                graph.setNodeAttribute(draggedNode, "x", pos.x);
+                graph.setNodeAttribute(draggedNode, "y", pos.y);
+                e.preventSigmaDefault();
+                e.original.preventDefault();
+                e.original.stopPropagation();
+            });
+
+            renderer.getMouseCaptor().on("mouseup", () => {
+                isDragging = false;
+                draggedNode = null;
+            });
+        }
+
+        // Clear highlights
+        function clearHighlights() {
+            graph.forEachNode((node) => {
+                if (graph.getNodeAttribute(node, "highlighted")) {
+                    const originalColor = graph.getNodeAttribute(node, "originalColor");
+                    if (originalColor) {
+                        graph.setNodeAttribute(node, "color", originalColor);
+                    }
+                    graph.removeNodeAttribute(node, "highlighted");
+                    graph.removeNodeAttribute(node, "originalColor");
+                }
+            });
+            renderer.refresh();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const nodeCount = graph.order;
+            const edgeCount = graph.size;
+            const density = nodeCount > 1 ? (2 * edgeCount) / (nodeCount * (nodeCount - 1)) : 0;
+
+            document.getElementById('stat-nodes').textContent = nodeCount;
+            document.getElementById('stat-edges').textContent = edgeCount;
+            document.getElementById('stat-density').textContent = density.toFixed(4);
+        }
+
+        // Button handlers
+        document.getElementById('btn-circular').addEventListener('click', () => {
+            circular.assign(graph);
+            renderer.refresh();
+            console.log('✓ Applied circular layout');
+        });
+
+        document.getElementById('btn-random').addEventListener('click', () => {
+            random.assign(graph);
+            renderer.refresh();
+            console.log('✓ Applied random layout');
+        });
+
+        document.getElementById('btn-refresh').addEventListener('click', () => {
+            renderer.refresh();
+            console.log('✓ Refreshed view');
+        });
+
+        document.getElementById('btn-add-node').addEventListener('click', () => {
+            const nodeId = document.getElementById('input-node-id').value.trim();
+            if (nodeId && !graph.hasNode(nodeId)) {
+                graph.addNode(nodeId, {
+                    label: nodeId,
+                    size: 12,
+                    color: '#e74c3c',
+                    x: Math.random(),
+                    y: Math.random(),
+                });
+                renderer.refresh();
+                updateStats();
+                document.getElementById('input-node-id').value = '';
+                console.log('✓ Added node:', nodeId);
+            } else if (graph.hasNode(nodeId)) {
+                alert('Node already exists!');
+            }
+        });
+
+        document.getElementById('btn-remove-node').addEventListener('click', () => {
+            const nodeId = document.getElementById('input-node-id').value.trim();
+            if (nodeId && graph.hasNode(nodeId)) {
+                graph.dropNode(nodeId);
+                renderer.refresh();
+                updateStats();
+                document.getElementById('input-node-id').value = '';
+                console.log('✓ Removed node:', nodeId);
+            } else {
+                alert('Node not found!');
+            }
+        });
+
+        document.getElementById('btn-clear-highlights').addEventListener('click', () => {
+            clearHighlights();
+            console.log('✓ Cleared highlights');
+        });
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => {
+            const camera = renderer.getCamera();
+            camera.animatedZoom({ duration: 300 });
+        });
+
+        document.getElementById('btn-zoom-out').addEventListener('click', () => {
+            const camera = renderer.getCamera();
+            camera.animatedUnzoom({ duration: 300 });
+        });
+
+        document.getElementById('btn-reset-view').addEventListener('click', () => {
+            const camera = renderer.getCamera();
+            camera.animatedReset({ duration: 300 });
+            console.log('✓ Reset view');
+        });
+
+        document.getElementById('btn-export').addEventListener('click', () => {
+            const data = {
+                nodes: graph.nodes().map(node => ({
+                    id: node,
+                    ...graph.getNodeAttributes(node),
+                })),
+                edges: graph.edges().map(edge => ({
+                    source: graph.source(edge),
+                    target: graph.target(edge),
+                    ...graph.getEdgeAttributes(edge),
+                })),
+            };
+
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'graph-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            console.log('✓ Exported graph data');
+        });
+
+        document.getElementById('btn-console-log').addEventListener('click', () => {
+            console.log('Graph data:', {
+                nodes: graph.order,
+                edges: graph.size,
+                nodeList: graph.nodes(),
+                edgeList: graph.edges(),
+            });
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Initializing Sigma.js Graph (CDN Version)...');
+            initGraph();
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Sigma.js Graph</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 300px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #sidebar h2 {
+            margin-bottom: 20px;
+            color: #3498db;
+        }
+
+        #sidebar h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #ecf0f1;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:active {
+            background-color: #1c5985;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            background-color: #34495e;
+            color: white;
+        }
+
+        input[type="text"]::placeholder {
+            color: #95a5a6;
+        }
+
+        #stats {
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        #stats p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        #graph-container {
+            flex: 1;
+            background-color: white;
+            position: relative;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 250px;
+            display: none;
+        }
+
+        #info-panel.visible {
+            display: block;
+        }
+
+        #info-panel h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>🎯 Graph Controls</h2>
+
+        <div class="controls">
+            <h3>Layout Algorithms</h3>
+            <div class="button-group">
+                <button id="btn-force-atlas">Force Atlas 2</button>
+                <button id="btn-circular">Circular Layout</button>
+                <button id="btn-random">Random Layout</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Graph Manipulation</h3>
+            <span class="label">Node ID:</span>
+            <input type="text" id="input-node-id" placeholder="e.g., node-new">
+            <div class="button-group">
+                <button id="btn-add-node">Add Node</button>
+                <button id="btn-remove-node">Remove Node</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Search & Filter</h3>
+            <input type="text" id="input-search" placeholder="Search nodes...">
+            <div class="button-group">
+                <button id="btn-clear-highlights">Clear Highlights</button>
+                <button id="btn-filter-category-a">Filter Category A</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Export/Import</h3>
+            <div class="button-group">
+                <button id="btn-export">Export to JSON</button>
+                <button id="btn-import">Import from JSON</button>
+            </div>
+        </div>
+
+        <div id="stats">
+            <h3>Graph Statistics</h3>
+            <p><strong>Nodes:</strong> <span id="stat-nodes">0</span></p>
+            <p><strong>Edges:</strong> <span id="stat-edges">0</span></p>
+            <p><strong>Density:</strong> <span id="stat-density">0</span></p>
+            <p><strong>Avg Degree:</strong> <span id="stat-degree">0</span></p>
+        </div>
+    </div>
+
+    <div id="graph-container"></div>
+
+    <div id="info-panel">
+        <h4>Node Information</h4>
+        <p><strong>ID:</strong> <span id="info-node-id">-</span></p>
+        <p><strong>Degree:</strong> <span id="info-degree">-</span></p>
+        <p><strong>Category:</strong> <span id="info-category">-</span></p>
+    </div>
+
+    <script type="module">
+        import GraphAPI from './app.js';
+
+        // Wait for initialization
+        const { graph, renderer } = GraphAPI.initialize();
+
+        // Update statistics display
+        function updateStats() {
+            const stats = GraphAPI.getGraphStats();
+            document.getElementById('stat-nodes').textContent = stats.nodeCount;
+            document.getElementById('stat-edges').textContent = stats.edgeCount;
+            document.getElementById('stat-density').textContent = stats.density.toFixed(4);
+            document.getElementById('stat-degree').textContent = stats.averageDegree.toFixed(2);
+        }
+
+        // Initial stats update
+        updateStats();
+
+        // Layout buttons
+        document.getElementById('btn-force-atlas').addEventListener('click', () => {
+            GraphAPI.applyForceAtlas2Layout();
+            updateStats();
+        });
+
+        document.getElementById('btn-circular').addEventListener('click', () => {
+            GraphAPI.applyCircularLayout();
+            updateStats();
+        });
+
+        document.getElementById('btn-random').addEventListener('click', () => {
+            GraphAPI.applyRandomLayout();
+            updateStats();
+        });
+
+        // Manipulation buttons
+        document.getElementById('btn-add-node').addEventListener('click', () => {
+            const nodeId = document.getElementById('input-node-id').value.trim();
+            if (nodeId) {
+                GraphAPI.addNode(nodeId, {
+                    label: nodeId,
+                    color: '#e74c3c',
+                    size: 12
+                });
+                updateStats();
+                document.getElementById('input-node-id').value = '';
+            }
+        });
+
+        document.getElementById('btn-remove-node').addEventListener('click', () => {
+            const nodeId = document.getElementById('input-node-id').value.trim();
+            if (nodeId) {
+                GraphAPI.removeNode(nodeId);
+                updateStats();
+                document.getElementById('input-node-id').value = '';
+            }
+        });
+
+        // Search functionality
+        document.getElementById('input-search').addEventListener('input', (e) => {
+            const query = e.target.value;
+            if (query.length > 0) {
+                GraphAPI.clearHighlights();
+                const results = GraphAPI.searchNodes(query);
+                results.forEach(({ node }) => {
+                    GraphAPI.highlightNode(node, '#e74c3c');
+                });
+            } else {
+                GraphAPI.clearHighlights();
+            }
+        });
+
+        document.getElementById('btn-clear-highlights').addEventListener('click', () => {
+            GraphAPI.clearHighlights();
+            document.getElementById('input-search').value = '';
+        });
+
+        document.getElementById('btn-filter-category-a').addEventListener('click', () => {
+            GraphAPI.clearHighlights();
+            const results = GraphAPI.filterNodesByAttribute('category', 'A');
+            results.forEach(({ node }) => {
+                GraphAPI.highlightNode(node, '#9b59b6');
+            });
+        });
+
+        // Export/Import
+        document.getElementById('btn-export').addEventListener('click', () => {
+            const json = GraphAPI.exportToJSON();
+            console.log('Exported graph data:', json);
+
+            // Download as file
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'graph-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('btn-import').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    GraphAPI.importFromJSON(event.target.result);
+                    updateStats();
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        console.log('Advanced Sigma.js Graph ready!');
+        console.log('Available API methods:', Object.keys(GraphAPI));
+    </script>
+</body>
+</html>
+
