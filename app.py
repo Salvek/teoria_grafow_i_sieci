@@ -2,7 +2,7 @@ import time
 from uuid import UUID
 from typing import List, Tuple
 from src.node import Node
-from src.utils import get_node, build_graph
+from src.utils import get_node, build_graph, load_json
 
 
 def bfs(
@@ -51,13 +51,28 @@ def dfs(
 
 
 if __name__ == "__main__":
-    graph_dict = {
-        "A": ("B", "C"),
-        "B": ("A", "D"),
-        "C": ("A", "D"),
-        "D": ("B", "C", "E"),
-        "E": ("D"),
-    }
+    # graph = {
+    #     "A": ("B", "C"),
+    #     "B": ("A", "D"),
+    #     "C": ("A", "D"),
+    #     "D": ("B", "C", "E"),
+    #     "E": ("D"),
+    # }
 
-    bfs_res = bfs(build_graph(graph_dict), "A", "E")
-    dfs_res = dfs(build_graph(graph_dict), "A", "E")
+    graphs = load_json("graphs.json")
+    for graph_name, graph in graphs.items():
+        print(f"\n!!! GRAPH - {graph_name.upper()} !!!")
+        bfs_res = bfs(build_graph(graph), "V0", "V120")
+        dfs_res = dfs(build_graph(graph), "V0", "V120")
+        print(
+            f"""[BFS]
+            ID: {bfs_res[0] if bfs_res else None}
+            Visited nodes: {bfs_res[1] if bfs_res else None}
+            Execution time: {bfs_res[2] if bfs_res else None} seconds"""
+        )
+        print(
+            f"""[DFS]
+            ID: {dfs_res[0] if dfs_res else None}
+            Visited nodes: {dfs_res[1] if dfs_res else None}
+            Execution time: {dfs_res[2] if dfs_res else None} seconds"""
+        )

@@ -1,3 +1,4 @@
+import json
 from typing import List
 from src.node import Node
 
@@ -18,3 +19,8 @@ def build_graph(graph_dict: dict[str, List[str]]) -> List[Node]:
 
 def get_node(graph: List[Node], label: str) -> Node:
     return list(filter(lambda x: x.label == label, graph))[0]
+
+
+def load_json(filename: str) -> dict:
+    with open(filename) as json_file:
+        return json.load(json_file)
