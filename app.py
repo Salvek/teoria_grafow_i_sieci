@@ -1,4 +1,5 @@
 import time
+from random import choice
 from uuid import UUID
 from typing import List, Tuple
 from src.node import Node
@@ -51,19 +52,13 @@ def dfs(
 
 
 if __name__ == "__main__":
-    # graph = {
-    #     "A": ("B", "C"),
-    #     "B": ("A", "D"),
-    #     "C": ("A", "D"),
-    #     "D": ("B", "C", "E"),
-    #     "E": ("D"),
-    # }
-
     graphs = load_json("graphs.json")
     for graph_name, graph in graphs.items():
         print(f"\n!!! GRAPH - {graph_name.upper()} !!!")
-        bfs_res = bfs(build_graph(graph), "V0", "V120")
-        dfs_res = dfs(build_graph(graph), "V0", "V120")
+        v = choice(list(graph.keys()))
+        print(f"Seeking - {v}")
+        bfs_res = bfs(build_graph(graph), "V0", v)
+        dfs_res = dfs(build_graph(graph), "V0", v)
         print(
             f"""[BFS]
             ID: {bfs_res[0] if bfs_res else None}
