@@ -52,22 +52,40 @@ def dfs(
 
 
 if __name__ == "__main__":
+    ITERATIONS = 10
+    LOG = False
     graphs = load_json("graphs.json")
+    bfs_results = {}
+    dfs_results = {}
     for graph_name, graph in graphs.items():
-        print(f"\n!!! GRAPH - {graph_name.upper()} !!!")
-        v = choice(list(graph.keys()))
-        print(f"Seeking - {v}")
-        bfs_res = bfs(build_graph(graph), "V0", v)
-        dfs_res = dfs(build_graph(graph), "V0", v)
-        print(
-            f"""[BFS]
-            ID: {bfs_res[0] if bfs_res else None}
-            Visited nodes: {bfs_res[1] if bfs_res else None}
-            Execution time: {bfs_res[2] if bfs_res else None} seconds"""
-        )
-        print(
-            f"""[DFS]
-            ID: {dfs_res[0] if dfs_res else None}
-            Visited nodes: {dfs_res[1] if dfs_res else None}
-            Execution time: {dfs_res[2] if dfs_res else None} seconds"""
-        )
+        bfs_results_nodes = 0
+        dfs_results_nodes = 0
+        for i in range(ITERATIONS):
+            if LOG:
+                print(f"\n!!! GRAPH - {graph_name.upper()} !!!")
+            v = choice(list(graph.keys()))
+            if LOG:
+                print(f"Seeking - {v}")
+            bfs_res = bfs(build_graph(graph), "V0", v)
+            dfs_res = dfs(build_graph(graph), "V0", v)
+            bfs_results_nodes += bfs_res[1] if bfs_res else 0
+            dfs_results_nodes += dfs_res[1] if dfs_res else 0
+            if LOG:
+                print(
+                    f"""[BFS]
+                    ID: {bfs_res[0] if bfs_res else None}
+                    Visited nodes: {bfs_res[1] if bfs_res else None}
+                    Execution time: {bfs_res[2] if bfs_res else None} seconds"""
+                )
+                print(
+                    f"""[DFS]
+                    ID: {dfs_res[0] if dfs_res else None}
+                    Visited nodes: {dfs_res[1] if dfs_res else None}
+                    Execution time: {dfs_res[2] if dfs_res else None} seconds"""
+                )
+        bfs_results[graph_name] = bfs_results_nodes / ITERATIONS
+        dfs_results[graph_name] = dfs_results_nodes / ITERATIONS
+
+    print("\rResults:")
+    print("BFS: ", bfs_results)
+    print("DFS: ", dfs_results)
